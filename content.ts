@@ -7,96 +7,106 @@ export const config: PlasmoContentScript = {
 var currentStreamer = "";
 
 const main = async () => {
-    const theme = localStorage.getItem("twilight.theme");
-    console.log("theme", theme);
+    // if (window.location.href.includes("tarik")) {
     //if theme is dark it is 1
+    //if theme is light it is 0
+    const theme = localStorage.getItem("twilight.theme");
 
-    var streamerName = document.getElementsByTagName("h1")[0];
-    console.log("query", streamerName);
-    var duoDiv = document.createElement("div");
-    duoDiv.id = "duo-div";
-    duoDiv.style.marginLeft = "8px";
-    duoDiv.style.fontWeight = "bold";
-    duoDiv.style.padding = "4px";
-    duoDiv.style.fontSize = "14px";
-    duoDiv.style.borderRadius = "4px";
-    duoDiv.style.backgroundColor = "rgba(0,0,0,0.05)";
-    duoDiv.style.color = "rgba(0,0,0,0.7)";
-    duoDiv.style.display = "flex";
-    duoDiv.style.alignItems = "center";
-    if (theme === "1") {
-        duoDiv.style.backgroundColor = "rgb(50,50,50)";
-        duoDiv.style.color = "rgba(255, 255, 255,.5)";
-    }
-
+    //we hit the fossabot api before anything else so we can insant load the data when were ready
     const res = await fetch(
         "https://api.fossabot.com/v2/cached/channels/301974676268695552/commands",
     );
     const data = await res.json();
     const commands = data["commands"];
     var duoCommandResponse = "";
+
+    //look through all the commands from fossabot and get the one for duo
+    //we save the response for that command
     for (const command of commands) {
         if (command.name === "duo") {
-            console.log(command.name);
-            console.log(command.response);
-
             duoCommandResponse = command.response;
         }
     }
 
     var spanArray: HTMLSpanElement[] = [];
+
+    //we now check to see if duo has any response
     if (duoCommandResponse !== "") {
+        //break the text up into custom object
         const textArray = splitIntoSpans(duoCommandResponse);
+        //each index of the array gets checked for if it is an emote
         const updatedTextArray = await checkForEmotes(textArray);
+        //we not create spans for the array of objects
+        //if it is text simply append the text to the span
+        //if it is an emote we create an image and append it to the span
         spanArray = createSpans(updatedTextArray);
-    }
 
-    while (!streamerName) {
-        streamerName = document.getElementsByTagName("h1")[0];
+        //we now grab the information from the dom to append our custom tag
+        var streamerName = document.getElementsByTagName("h1")[0];
+        while (!streamerName) {
+            streamerName = document.getElementsByTagName("h1")[0];
+            console.log("waiting for streamer name");
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
 
-        console.log("streamName", streamerName);
-        console.log("waiting for streamer name");
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-    }
+        //this is used for when the url changes and we need to insure the h1 is updated before we attempt to grab new data
+        currentStreamer = streamerName.innerText;
 
-    currentStreamer = streamerName.innerText;
-    const parentDiv = streamerName.parentElement.parentElement;
-    if (window.location.href.includes("/tarik")) {
-        console.log(
-            "trent fps detected-------------------------------------------------",
-        );
-        const outerImgSpan = document.createElement("span");
-        outerImgSpan.style.height = "28px";
-        outerImgSpan.style.width = "28px";
-        const emoteImg = document.createElement("img");
-        emoteImg.src =
-            "https://cdn.betterttv.net/emote/56c2cff2d9ec6bf744247bf1/1x";
+        //div that contains the streamers name and partner badge
+        const parentDiv = streamerName.parentElement.parentElement;
 
+        //checking if weve already injecting our custom tag
         const doesDuoDivExistFromBefore = document.getElementById("duo-div");
 
-        //since we run a loop to check for a new duo periodically we need to remove the old dive before adding the new one
+        //removing our custom tage before we inject it again
         if (doesDuoDivExistFromBefore) {
             doesDuoDivExistFromBefore.remove();
         }
 
-        const tempSpan = document.createElement("span");
-        tempSpan.innerText = "Duo: ";
-        duoDiv.appendChild(tempSpan);
+        //this is the div that will contain all spans
+        var duoDiv = document.createElement("div");
+        duoDiv.id = "duo-div";
+        duoDiv.style.marginLeft = "8px";
+        duoDiv.style.fontWeight = "bold";
+        duoDiv.style.padding = "4px";
+        duoDiv.style.fontSize = "14px";
+        duoDiv.style.borderRadius = "4px";
+        duoDiv.style.backgroundColor = "rgba(0,0,0,0.05)";
+        duoDiv.style.color = "rgba(0,0,0,0.7)";
+        duoDiv.style.display = "flex";
+        duoDiv.style.alignItems = "center";
+        if (theme === "1") {
+            duoDiv.style.backgroundColor = "rgb(50,50,50)";
+            duoDiv.style.color = "rgba(255, 255, 255,.5)";
+        }
+
+        const duoLabelSpan = document.createElement("span");
+        duoLabelSpan.innerText = "Duo: ";
+        duoDiv.appendChild(duoLabelSpan);
+
+        //we take the array of spans we got from createSpans and append them all to the duo div
+
         for (const span of spanArray) {
             duoDiv.appendChild(span);
         }
-        parentDiv.appendChild(duoDiv);
-    }
+
+        //we append the duo div to the parent div which is the div that originally contains the streamers
+        //name and the partner badge
+        if (window.location.href.includes("tarik")) {
+            parentDiv.appendChild(duoDiv);
+        }
+    } // end of if statement checking if duo command had a response
+    // } //end of checking if were on tariks url even
 };
 
+//run main when page is loaded
 window.onload =
     () => {
         console.log("page loaded-------");
-        // var streamerName = document.getElementsByTagName("h1")[0];
-        // console.log("querywooooo", streamerName);
         main();
     };
 
+//since twitch is a SPA we need to monitor the url for changes since it does not trigger reloads when navigating to a new page
 let lastUrl = location.href;
 new MutationObserver(() => {
     const url = location.href;
@@ -128,6 +138,7 @@ interface CustomSpan {
     url: string;
 }
 
+//we take a string and break it up into an array of custom objects
 function splitIntoSpans(text) {
     console.log("splitIntoSpans");
     const textSpans = [] as CustomSpan[];
@@ -226,5 +237,5 @@ setInterval(
     () => {
         main();
     },
-    600000,
+    60000,
 );

@@ -1,8 +1,8 @@
 {
   "name": "tarik-duo",
   "displayName": "Tarik duo",
-  "version": "0.0.0",
-  "description": "A basic Plasmo extension.",
+  "version": "1.0.0",
+  "description": "An extension to show you who tarik is duo queing with.",
   "author": "Berbaroovez",
   "scripts": {
     "dev": "plasmo dev",
@@ -24,7 +24,7 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*/*"
+      "https://www.twitch.tv/*"
     ]
   }
 }
