@@ -1,7 +1,7 @@
 {
   "name": "tarik-duo",
   "displayName": "Tarik duo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "An extension to show you who tarik is duo queing with.",
   "author": "Berbaroovez",
   "scripts": {
@@ -9,6 +9,7 @@
     "build": "plasmo build"
   },
   "dependencies": {
+    "@plasmohq/storage": "^0.7.0",
     "plasmo": "latest",
     "react": "18.2.0",
     "react-dom": "18.2.0"
