@@ -111,6 +111,9 @@ const createSpans = (textArray: CustomSpan[]) => {
     const spans = [] as HTMLSpanElement[];
     for (const word of textArray) {
         const span = document.createElement("span");
+        //had to do this since space wasnt being recognized as a word
+        //causing the text to all be smooshed together
+        span.style.marginRight = "4px";
 
         if (word.isEmote) {
             span.style.width = "28px";
@@ -120,7 +123,7 @@ const createSpans = (textArray: CustomSpan[]) => {
             img.src = word.url;
             span.appendChild(img);
         } else {
-            span.innerText = word.text.padEnd(1, " ");
+            span.innerText = word.text;
         }
         spans.push(span);
     }
@@ -220,6 +223,7 @@ const createTag = (label: string) => {
     //if theme is dark it is 1
     //if theme is light it is 0
     const theme = localStorage.getItem("twilight.theme");
+    console.log("theme----", theme);
 
     var tempDiv = document.createElement("div");
     tempDiv.id = `${label}-div`;
@@ -228,13 +232,17 @@ const createTag = (label: string) => {
     tempDiv.style.padding = "4px";
     tempDiv.style.fontSize = "14px";
     tempDiv.style.borderRadius = "4px";
-    tempDiv.style.backgroundColor = "rgb(62, 62, 64)";
-    tempDiv.style.color = "rgba(0,0,0,0.7)";
+    // tempDiv.style.backgroundColor = "orange";
+    tempDiv.style.backgroundColor = "rgb(222, 222, 223)";
+    tempDiv.style.color = "rgb(66, 66, 66)";
     tempDiv.style.display = "flex";
     tempDiv.style.alignItems = "center";
+    tempDiv.style.height = "36px";
     if (theme === "1") {
+        console.log("theme is dark");
+        // tempDiv.style.backgroundColor = "blue";
         tempDiv.style.backgroundColor = "rgb(50,50,50)";
-        tempDiv.style.color = "rgba(255, 255, 255,.5)";
+        tempDiv.style.color = "rgb(99, 99, 102)";
     }
 
     const labelSpan = document.createElement("span");
