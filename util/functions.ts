@@ -1,40 +1,11 @@
 import type { CustomSpan } from "./types";
 import { Storage } from "@plasmohq/storage";
+import { get7TvEmotes, getBttvEmotes, getFFZEmotes } from "./emotes";
 //hits the 7tv api to check if the text is an emote
 //We use 7tv because it returns also BTTV and FFZ emotes
 
 const checkForEmotes = async (textArray: CustomSpan[]) => {
-    const response = await fetch("https://api.7tv.app/v2/gql", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            query: `
-          query GetUsersEmotes ($id: String!) {
-            user(id:$id) { 
-             emotes {
-                    id
-                    name
-                    owner_id
-                    urls
-                    provider
-                  }
-              third_party_emotes {
-                id
-                name
-                owner_id
-                urls
-                provider
-              }
-            }
-          }
-            `,
-            variables: {
-                id: "36340781",
-            },
-        }),
-    });
+    // });
 
     const headers = {
         Authorization: `Bearer ${process.env.PLASMO_PUBLIC_BEARER}`,
@@ -52,6 +23,9 @@ const checkForEmotes = async (textArray: CustomSpan[]) => {
     );
 
     const twitchChannelEmoteData = await twitchChannelEmoteResponse.json();
+    const bttvEmotes = await getBttvEmotes("36340781");
+    const ffzEmotes = await getFFZEmotes("36340781");
+    const sevenTVEmotes = await get7TvEmotes("36340781");
 
     //gets twitch users id
 
@@ -64,20 +38,37 @@ const checkForEmotes = async (textArray: CustomSpan[]) => {
     // const twitchuseridtestData = await twitchuseridtest.json();
     // console.log("twitch user", twitchuseridtestData);
 
-    console.log("twitch emote data", twitchEmoteData);
-
-    const data = await response.json();
-    const emotes = data["data"]["user"]["emotes"];
-    const thirdPartyEmotes = data["data"]["user"]["third_party_emotes"];
-    const emotesArray = emotes.concat(thirdPartyEmotes);
-
-    //this loop checks emotes for bttv, ffz, and 7tv
-    for (const emote of emotesArray) {
+    // this loop checks emotes for bttv
+    for (const emote of bttvEmotes) {
+        for (const word of textArray) {
+            if (emote.code == word.text) {
+                console.log("bttv emote found", emote.code);
+                word.isEmote = true;
+                word.url = `https://cdn.betterttv.net/emote/${emote.id}/1x`;
+            }
+        }
+    }
+    // this loop checks emotes for ffz
+    for (const emote of ffzEmotes) {
         for (const word of textArray) {
             if (emote.name == word.text) {
-                console.log("emote found", emote.urls[0][1]);
+                console.log("ffz emote found", emote.name);
                 word.isEmote = true;
-                word.url = emote.urls[0][1];
+                word.url = emote.urls[1];
+            }
+        }
+    }
+    // this loop checks emotes for 7tv
+    console.log("7tv emotes", sevenTVEmotes);
+    for (const emote of sevenTVEmotes) {
+        for (const word of textArray) {
+            if (word.text === "pogg") {
+                console.log("Poggggg is being checked");
+            }
+            if (emote.name == word.text) {
+                console.log("7tv emote found", emote.name);
+                word.isEmote = true;
+                word.url = `https://cdn.7tv.app/emote/${emote.id}/1x`;
             }
         }
     }
